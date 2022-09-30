@@ -1,0 +1,13 @@
+// tsconfig options targeting Node.js.
+{
+  "compilerOptions": {
+    "outDir": "build/server",
+    "module": "commonjs",
+    "target": "ES6",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    /* Emit sourcemap files. */
+    "sourceMap": true
+  },
+  "include": ["src/server"]
+}
