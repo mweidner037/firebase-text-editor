@@ -1,4 +1,6 @@
 {
+  "author": "Matthew Weidner",
+  "description": "Collaborative plain text editor built on top of Firebase RTDB",
   "license": "Apache 2.0",
   "dependencies": {
     "express": "^4.17.1",
