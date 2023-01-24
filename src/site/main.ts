@@ -1,13 +1,14 @@
 // Import the functions you need from the SDKs you need
 import { FirebaseOptions, initializeApp } from "firebase/app";
+import { getAuth, signInAnonymously } from "firebase/auth";
 import {
   getDatabase,
+  onValue,
+  orderByChild,
+  push,
   query,
   ref,
-  orderByChild,
-  onValue,
   update,
-  push,
 } from "firebase/database";
 import { Position, PositionSource } from "./position_source";
 
@@ -19,6 +20,8 @@ import { Position, PositionSource } from "./position_source";
   }
   const firebaseConfig = <FirebaseOptions>JSON.parse(configEnv);
   const app = initializeApp(firebaseConfig);
+  await signInAnonymously(getAuth(app));
+
   const db = getDatabase(app);
   const textRef = ref(db, "text/");
 
