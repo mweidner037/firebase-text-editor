@@ -10,7 +10,7 @@ import {
   ref,
   update,
 } from "firebase/database";
-import { Position, PositionSource } from "./position_source";
+import { Cursors, PositionSource } from "position-strings";
 
 (async function () {
   // Initialize Firebase
@@ -30,7 +30,7 @@ import { Position, PositionSource } from "./position_source";
 
   // Text query. The current text's sorted pos's and keys are cached in
   // positions and keys, resp.
-  let positions: Position[] = [];
+  let positions: string[] = [];
   let keys: string[] = [];
   const textQuery = query(textRef, orderByChild("pos"));
   onValue(textQuery, (snapshot) => {
@@ -48,22 +48,22 @@ import { Position, PositionSource } from "./position_source";
   });
 
   // Cursors.
-  let myStartCursor = posSource.cursor(positions, 0);
-  let myEndCursor = posSource.cursor(positions, 0);
+  let myStartCursor = Cursors.fromIndex(0, positions);
+  let myEndCursor = Cursors.fromIndex(0, positions);
 
   function updateCursors() {
     // Need to do this on a delay because the event doesn't
     // due its default action (updating the handler) until
     // after the event handlers.
     setTimeout(() => {
-      myStartCursor = posSource.cursor(positions, textarea.selectionStart);
-      myEndCursor = posSource.cursor(positions, textarea.selectionEnd);
+      myStartCursor = Cursors.fromIndex(textarea.selectionStart, positions);
+      myEndCursor = Cursors.fromIndex(textarea.selectionEnd, positions);
     }, 0);
   }
 
   function updateSelection() {
-    textarea.selectionStart = posSource.index(positions, myStartCursor);
-    textarea.selectionEnd = posSource.index(positions, myEndCursor);
+    textarea.selectionStart = Cursors.toIndex(myStartCursor, positions);
+    textarea.selectionEnd = Cursors.toIndex(myEndCursor, positions);
   }
 
   window.addEventListener("selectionchange", updateCursors);
@@ -75,20 +75,20 @@ import { Position, PositionSource } from "./position_source";
 
   // Change the text when a key is pressed in textarea
   textarea.addEventListener("keydown", (e) => {
-    const startIndex = posSource.index(positions, myStartCursor);
-    const endIndex = posSource.index(positions, myEndCursor);
+    const startIndex = Cursors.toIndex(myStartCursor, positions);
+    const endIndex = Cursors.toIndex(myEndCursor, positions);
     if (e.key === "Backspace") {
       if (endIndex > startIndex) {
         textDelete(startIndex, endIndex - startIndex);
-        myEndCursor = posSource.cursor(positions, startIndex);
+        myEndCursor = Cursors.fromIndex(startIndex, positions);
       } else if (endIndex === startIndex && startIndex > 0) {
         textDelete(startIndex - 1);
-        myStartCursor = posSource.cursor(positions, startIndex - 1);
+        myStartCursor = Cursors.fromIndex(startIndex - 1, positions);
       }
     } else if (e.key === "Delete") {
       if (endIndex > startIndex) {
         textDelete(startIndex, endIndex - startIndex);
-        myEndCursor = posSource.cursor(positions, startIndex);
+        myEndCursor = Cursors.fromIndex(startIndex, positions);
       } else if (
         endIndex === startIndex &&
         startIndex < textarea.value.length
@@ -123,8 +123,8 @@ import { Position, PositionSource } from "./position_source";
       textDelete(startIndex, endIndex - startIndex);
     }
     textInsert(startIndex, str);
-    myStartCursor = posSource.cursor(positions, startIndex + str.length);
-    myEndCursor = posSource.cursor(positions, startIndex + str.length);
+    myStartCursor = Cursors.fromIndex(startIndex + str.length, positions);
+    myEndCursor = Cursors.fromIndex(startIndex + str.length, positions);
   }
 
   function shouldType(e: KeyboardEvent): boolean {
@@ -136,7 +136,7 @@ import { Position, PositionSource } from "./position_source";
     // immediately. To prevent indices from getting confused, generate all
     // the positions before pushing anything.
     // OPT: integrate with createBetween.
-    const newPositions: Position[] = [];
+    const newPositions: string[] = [];
     let before = positions[index - 1];
     const after = positions[index];
     for (let i = 0; i < str.length; i++) {
@@ -163,8 +163,8 @@ import { Position, PositionSource } from "./position_source";
       const pasted = e.clipboardData.getData("text");
       type(
         pasted,
-        posSource.index(positions, myStartCursor),
-        posSource.index(positions, myEndCursor)
+        Cursors.toIndex(myStartCursor, positions),
+        Cursors.toIndex(myEndCursor, positions)
       );
       updateSelection();
     }
@@ -172,8 +172,8 @@ import { Position, PositionSource } from "./position_source";
   });
 
   textarea.addEventListener("cut", () => {
-    const startIndex = posSource.index(positions, myStartCursor);
-    const endIndex = posSource.index(positions, myEndCursor);
+    const startIndex = Cursors.toIndex(myStartCursor, positions);
+    const endIndex = Cursors.toIndex(myEndCursor, positions);
     if (startIndex < endIndex) {
       const selected = textarea.value.slice(startIndex, endIndex);
       navigator.clipboard.writeText(selected);
